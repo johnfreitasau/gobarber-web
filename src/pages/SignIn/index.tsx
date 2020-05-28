@@ -1,5 +1,9 @@
-import React from 'react';
+import React, { useRef, useCallback } from 'react';
 import { FiLogIn, FiMail, FiLock } from 'react-icons/fi';
+import { Form } from '@unform/web';
+import { FormHandles } from '@unform/core';
+import * as Yup from 'yup';
+import getValidationErrors from '../../utils/getValidationErrors';
 
 import logoImg from '../../assets/logo.svg';
 
@@ -8,35 +12,62 @@ import Button from '../../components/Button';
 
 import { Container, Content, Background } from './styles';
 
-const SignIn: React.FC = () => (
-  <>
-    <Container>
-      <Content>
-        <img src={logoImg} alt="GoBarber Logo" />
+const SignIn: React.FC = () => {
+  const formRef = useRef<FormHandles>(null);
 
-        <form>
-          <h1>Login</h1>
-          <Input name="email" icon={FiMail} placeholder="E-mail" />
+  console.log(formRef);
 
-          <Input
-            name="password"
-            icon={FiLock}
-            type="password"
-            placeholder="Password"
-          />
+  const handleSubmit = useCallback(async (data: Record<string, unknown>) => {
+    formRef.current?.setErrors({});
 
-          <Button type="submit">Sign In</Button>
-          <a href="test">Forgot my password</a>
-        </form>
+    try {
+      // formRef.current?.setErrors({});
 
-        <a href="test">
-          <FiLogIn />
-          Create account
-        </a>
-      </Content>
-      <Background />
-    </Container>
-  </>
-);
+      const schema = Yup.object().shape({
+        email: Yup.string()
+          .required('Name is required.')
+          .email('Digit a valid e-mail.'),
+        password: Yup.string().min(6, 'Password must be 6 characters long.'),
+      });
+
+      await schema.validate(data, { abortEarly: false });
+    } catch (err) {
+      const errors = getValidationErrors(err);
+      console.log(errors);
+      formRef.current?.setErrors(errors);
+    }
+  }, []);
+
+  return (
+    <>
+      <Container>
+        <Content>
+          <img src={logoImg} alt="GoBarber Logo" />
+
+          <Form ref={formRef} onSubmit={handleSubmit}>
+            <h1>Login</h1>
+            <Input name="email" icon={FiMail} placeholder="E-mail" />
+
+            <Input
+              name="password"
+              icon={FiLock}
+              type="password"
+              placeholder="Password"
+            />
+
+            <Button type="submit">Sign In</Button>
+            <a href="test">Forgot my password</a>
+          </Form>
+
+          <a href="test">
+            <FiLogIn />
+            Create account
+          </a>
+        </Content>
+        <Background />
+      </Container>
+    </>
+  );
+};
 
 export default SignIn;
