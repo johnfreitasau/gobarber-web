@@ -3,7 +3,7 @@ import { FiLogIn, FiMail, FiLock } from 'react-icons/fi';
 import { Form } from '@unform/web';
 import { FormHandles } from '@unform/core';
 import * as Yup from 'yup';
-import AuthContext from '../../context/AuthContext';
+import { AuthContext } from '../../context/AuthContext';
 import getValidationErrors from '../../utils/getValidationErrors';
 
 import logoImg from '../../assets/logo.svg';
@@ -13,34 +13,51 @@ import Button from '../../components/Button';
 
 import { Container, Content, Background } from './styles';
 
+interface SignInFormData {
+  email: string;
+  password: string;
+}
+
 const SignIn: React.FC = () => {
   const formRef = useRef<FormHandles>(null);
 
   console.log(formRef);
 
-  const { name } = useContext(AuthContext);
-  console.log(name);
+  const { user, signIn } = useContext(AuthContext);
 
-  const handleSubmit = useCallback(async (data: Record<string, unknown>) => {
-    formRef.current?.setErrors({});
+  console.log('Chegou aqui');
+  console.log(user);
+  console.log(signIn);
 
-    try {
-      // formRef.current?.setErrors({});
+  const handleSubmit = useCallback(
+    async (data: SignInFormData) => {
+      formRef.current?.setErrors({});
 
-      const schema = Yup.object().shape({
-        email: Yup.string()
-          .required('Name is required.')
-          .email('Digit a valid e-mail.'),
-        password: Yup.string().min(6, 'Password must be 6 characters long.'),
-      });
+      try {
+        // formRef.current?.setErrors({});
 
-      await schema.validate(data, { abortEarly: false });
-    } catch (err) {
-      const errors = getValidationErrors(err);
-      console.log(errors);
-      formRef.current?.setErrors(errors);
-    }
-  }, []);
+        const schema = Yup.object().shape({
+          email: Yup.string()
+            .required('Name is required.')
+            .email('Digit a valid e-mail.'),
+          // password: Yup.string().min(6, 'Password must be 6 characters long.'),
+          password: Yup.string().required('Password required.'),
+        });
+
+        await schema.validate(data, { abortEarly: false });
+
+        signIn({
+          email: data.email,
+          password: data.password,
+        });
+      } catch (err) {
+        const errors = getValidationErrors(err);
+        console.log(errors);
+        formRef.current?.setErrors(errors);
+      }
+    },
+    [signIn],
+  );
 
   return (
     <>
