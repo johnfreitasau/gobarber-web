@@ -3,67 +3,104 @@ import { FiArrowLeft, FiUser, FiMail, FiLock } from 'react-icons/fi';
 import { Form } from '@unform/web';
 import { FormHandles } from '@unform/core';
 import * as Yup from 'yup';
-import logoImg from '../../assets/logo.svg';
+import { Link, useHistory } from 'react-router-dom';
+
+import api from '../../services/api';
+import { useToast } from '../../hooks/toast';
+
 import getValidationErrors from '../../utils/getValidationErrors';
+
+import logoImg from '../../assets/logo.svg';
 
 import Input from '../../components/Input';
 import Button from '../../components/Button';
 
-import { Container, Content, Background } from './styles';
+import { Container, Content, Background, AnimationContainer } from './styles';
+
+interface SignUpFormData {
+  name: string;
+  email: string;
+  password: string;
+}
 
 const SignUp: React.FC = () => {
   const formRef = useRef<FormHandles>(null);
+  const { addToast } = useToast();
+  const history = useHistory();
 
   console.log(formRef);
 
-  const handleSubmit = useCallback(async (data: Record<string, unknown>) => {
-    formRef.current?.setErrors({});
+  const handleSubmit = useCallback(
+    async (data: SignUpFormData) => {
+      formRef.current?.setErrors({});
 
-    try {
-      // formRef.current?.setErrors({});
+      try {
+        const schema = Yup.object().shape({
+          name: Yup.string().required(),
+          email: Yup.string()
+            .required('Name is required.')
+            .email('Digit a valid e-mail.'),
+          password: Yup.string().min(6, 'Password must be 6 characters long.'),
+        });
 
-      const schema = Yup.object().shape({
-        name: Yup.string().required(),
-        email: Yup.string()
-          .required('Name is required.')
-          .email('Digit a valid e-mail.'),
-        password: Yup.string().min(6, 'Password must be 6 characters long.'),
-      });
+        await schema.validate(data, { abortEarly: false });
 
-      await schema.validate(data, { abortEarly: false });
-    } catch (err) {
-      const errors = getValidationErrors(err);
+        await api.post('/users', data);
 
-      formRef.current?.setErrors(errors);
-    }
-  }, []);
+        history.push('/');
+
+        addToast({
+          type: 'success',
+          title: 'SignUp completed successfully.',
+          description: 'You can now log on to the application.',
+        });
+      } catch (err) {
+        if (err instanceof Yup.ValidationError) {
+          const errors = getValidationErrors(err);
+
+          formRef.current?.setErrors(errors);
+
+          return;
+        }
+        addToast({
+          type: 'error',
+          title: 'SignUp Error',
+          description: 'Authentication error. Please try again.',
+        });
+      }
+    },
+    [addToast, history],
+  );
 
   return (
     <>
       <Container>
         <Background />
+
         <Content>
-          <img src={logoImg} alt="GoBarber Logo" />
+          <AnimationContainer>
+            <img src={logoImg} alt="GoBarber Logo" />
 
-          <Form ref={formRef} onSubmit={handleSubmit}>
-            <h1>Registration</h1>
+            <Form ref={formRef} onSubmit={handleSubmit}>
+              <h1>Registration</h1>
 
-            <Input name="name" icon={FiUser} placeholder="Name" />
-            <Input name="email" icon={FiMail} placeholder="E-mail" />
-            <Input
-              name="password"
-              icon={FiLock}
-              type="password"
-              placeholder="Password"
-            />
+              <Input name="name" icon={FiUser} placeholder="Name" />
+              <Input name="email" icon={FiMail} placeholder="E-mail" />
+              <Input
+                name="password"
+                icon={FiLock}
+                type="password"
+                placeholder="Password"
+              />
 
-            <Button type="submit">Sign Up</Button>
-          </Form>
+              <Button type="submit">Sign Up</Button>
+            </Form>
 
-          <a href="test">
-            <FiArrowLeft />
-            Back to the Login page
-          </a>
+            <Link to="/">
+              <FiArrowLeft />
+              Back to the Login page
+            </Link>
+          </AnimationContainer>
         </Content>
       </Container>
     </>
