@@ -1,13 +1,11 @@
-import React, { useCallback, useRef } from 'react';
-import { FiArrowLeft, FiUser, FiMail, FiLock } from 'react-icons/fi';
+import React, { useRef, useCallback } from 'react';
+import { FiLock } from 'react-icons/fi';
 import { Form } from '@unform/web';
 import { FormHandles } from '@unform/core';
 import * as Yup from 'yup';
-import { Link, useHistory } from 'react-router-dom';
+import { useHistory, useLocation } from 'react-router-dom';
 
-import api from '../../services/api';
 import { useToast } from '../../hooks/toast';
-
 import getValidationErrors from '../../utils/getValidationErrors';
 
 import logoImg from '../../assets/logo.svg';
@@ -16,45 +14,51 @@ import Input from '../../components/Input';
 import Button from '../../components/Button';
 
 import { Container, Content, Background, AnimationContainer } from './styles';
+import api from '../../services/api';
 
-interface SignUpFormData {
-  name: string;
-  email: string;
+interface ResetPasswordFormData {
   password: string;
+  password_confirmation: string;
 }
 
-const SignUp: React.FC = () => {
+const ResetPassword: React.FC = () => {
   const formRef = useRef<FormHandles>(null);
-  const { addToast } = useToast();
-  const history = useHistory();
 
-  // console.log(formRef);
+  const { addToast } = useToast();
+
+  const history = useHistory();
+  const location = useLocation();
 
   const handleSubmit = useCallback(
-    async (data: SignUpFormData) => {
-      formRef.current?.setErrors({});
-
+    async (data: ResetPasswordFormData) => {
       try {
+        formRef.current?.setErrors({});
+
         const schema = Yup.object().shape({
-          name: Yup.string().required(),
-          email: Yup.string()
-            .required('Name is required.')
-            .email('Digit a valid e-mail.'),
           password: Yup.string().required('Password required.'),
-          // password: Yup.string().min(6, 'Password must be 6 characters long.'),
+          password_confirmation: Yup.string().oneOf(
+            [Yup.ref('password')],
+            'Passwords must match',
+          ),
         });
 
         await schema.validate(data, { abortEarly: false });
 
-        await api.post('/users', data);
+        const { password, password_confirmation } = data;
+
+        const token = location.search.replace('?token=', '');
+
+        if (!token) {
+          throw new Error();
+        }
+
+        await api.post('/password/reset', {
+          password,
+          password_confirmation,
+          token,
+        });
 
         history.push('/');
-
-        addToast({
-          type: 'success',
-          title: 'SignUp completed successfully.',
-          description: 'You can now log on to the application.',
-        });
       } catch (err) {
         if (err instanceof Yup.ValidationError) {
           const errors = getValidationErrors(err);
@@ -65,47 +69,46 @@ const SignUp: React.FC = () => {
         }
         addToast({
           type: 'error',
-          title: 'SignUp Error',
-          description: 'Authentication error. Please try again.',
+          title: 'Password Reset Error',
+          description:
+            'Error ocurred when trying to reset your password. Please try again.',
         });
       }
     },
-    [addToast, history],
+    [addToast, history, location.search],
   );
 
   return (
     <>
       <Container>
-        <Background />
-
         <Content>
           <AnimationContainer>
             <img src={logoImg} alt="GoBarber Logo" />
 
             <Form ref={formRef} onSubmit={handleSubmit}>
-              <h1>Registration</h1>
+              <h1>Reset Password</h1>
 
-              <Input name="name" icon={FiUser} placeholder="Name" />
-              <Input name="email" icon={FiMail} placeholder="E-mail" />
               <Input
                 name="password"
                 icon={FiLock}
                 type="password"
-                placeholder="Password"
+                placeholder="New Password"
               />
 
-              <Button type="submit">Sign Up</Button>
+              <Input
+                name="password_confirmation"
+                icon={FiLock}
+                type="password"
+                placeholder="Password Confirmation"
+              />
+              <Button type="submit">Change Password</Button>
             </Form>
-
-            <Link to="/">
-              <FiArrowLeft />
-              Back to the Login page
-            </Link>
           </AnimationContainer>
         </Content>
+        <Background />
       </Container>
     </>
   );
 };
 
-export default SignUp;
+export default ResetPassword;

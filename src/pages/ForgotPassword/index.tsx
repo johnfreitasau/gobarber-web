@@ -23,11 +23,10 @@ interface ForgotPasswordFormData {
 
 const ForgotPassword: React.FC = () => {
   const [loading, setLoading] = useState(false);
-  
+
   const formRef = useRef<FormHandles>(null);
 
   const { addToast } = useToast();
-  const history = useHistory();
 
   const handleSubmit = useCallback(
     async (data: ForgotPasswordFormData) => {
@@ -44,17 +43,15 @@ const ForgotPassword: React.FC = () => {
 
         await schema.validate(data, { abortEarly: false });
 
-        //recuperacao de senha
-        await api.post('/password/forgot', {email: data.email})
+        // recuperacao de senha
+        await api.post('/password/forgot', { email: data.email });
 
         addToast({
           type: 'success',
           title: 'Password reset e-mail has been sent',
-          description: 'We have sent you an email to confirm complete your password reset. Please check your mailbox.'
-
-        })
-
-        // history.push('/dashboard');
+          description:
+            'We have sent you an email to confirm complete your password reset. Please check your mailbox.',
+        });
       } catch (err) {
         if (err instanceof Yup.ValidationError) {
           const errors = getValidationErrors(err);
@@ -83,10 +80,12 @@ const ForgotPassword: React.FC = () => {
             <img src={logoImg} alt="GoBarber Logo" />
 
             <Form ref={formRef} onSubmit={handleSubmit}>
-              <h1>Password reset</h1>
+              <h1>Forgot Password</h1>
               <Input name="email" icon={FiMail} placeholder="E-mail" />
 
-              <Button loading={loading} type="submit">Reset</Button>
+              <Button loading={loading} type="submit">
+                Reset
+              </Button>
             </Form>
 
             <Link to="/">
