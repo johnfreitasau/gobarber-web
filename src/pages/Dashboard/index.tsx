@@ -1,8 +1,9 @@
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import DayPicker, { DayModifiers } from 'react-day-picker';
 import 'react-day-picker/lib/style.css';
 import { FiPower, FiClock } from 'react-icons/fi';
-import { isToday, format, parseISO } from 'date-fns';
+import { isToday, format, parseISO, isAfter } from 'date-fns';
 import enAU from 'date-fns/locale/en-AU';
 import logoImg from '../../assets/logo.svg';
 import {
@@ -44,14 +45,11 @@ const Dashboard: React.FC = () => {
   >([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
 
-  const handleOnDateChange = useCallback(
-    (day: Date, modifiers: DayModifiers) => {
-      if (modifiers.available) {
-        setSelectedDate(day);
-      }
-    },
-    [],
-  );
+  const handleDateChange = useCallback((day: Date, modifiers: DayModifiers) => {
+    if (modifiers.available && !modifiers.disabled) {
+      setSelectedDate(day);
+    }
+  }, []);
 
   const handleMonthChange = useCallback((month: Date) => {
     setCurrentMonth(month);
@@ -124,6 +122,12 @@ const Dashboard: React.FC = () => {
     );
   }, [appointments]);
 
+  const nextAppointment = useMemo(() => {
+    return appointments.find((appointment) =>
+      isAfter(parseISO(appointment.date), new Date()),
+    );
+  }, [appointments]);
+
   return (
     <Container>
       <Header>
@@ -134,7 +138,9 @@ const Dashboard: React.FC = () => {
             <img src={user.avatar_url} alt="GoBarber Avatar" />
             <div>
               <span>Welcome,</span>
-              <strong>{user.name}</strong>
+              <Link to="/profile">
+                <strong>{user.name}</strong>
+              </Link>
             </div>
           </Profile>
           <button type="button" onClick={signOut}>
@@ -145,28 +151,34 @@ const Dashboard: React.FC = () => {
 
       <Content>
         <Schedule>
-          <h1>Scheduled times</h1>
+          <h1>Scheduled appointments</h1>
           <p>
             {isToday(selectedDate) && <span>Today</span>}
             <span>{selectedDateAsText}</span>
             <span>{selectedWeekDay}</span>
           </p>
 
-          <NextAppointment>
-            <strong>Following schedules:</strong>
-            <div>
-              <img src={user.avatar_url} alt="John Freitas" />
+          {isToday(selectedDate) && nextAppointment && (
+            <NextAppointment>
+              <strong>Following appointments:</strong>
+              <div>
+                <img src={nextAppointment.user.avatar_url} alt="John Freitas" />
 
-              <strong>John Freitas</strong>
-              <span>
-                <FiClock />
-                08:00
-              </span>
-            </div>
-          </NextAppointment>
+                <strong>{nextAppointment.user.name}</strong>
+                <span>
+                  <FiClock />
+                  {nextAppointment.formattedHour}
+                </span>
+              </div>
+            </NextAppointment>
+          )}
 
           <Section>
             <strong>Morning</strong>
+
+            {morningAppointments.length === 0 && (
+              <p>No appointments in the morning.</p>
+            )}
 
             {morningAppointments.map((appointment) => (
               <Appointment key={appointment.id}>
@@ -187,6 +199,11 @@ const Dashboard: React.FC = () => {
           </Section>
           <Section>
             <strong>Afternoon</strong>
+
+            {afternoonAppointments.length === 0 && (
+              <p>No appointments in the afternoon.</p>
+            )}
+
             {afternoonAppointments.map((appointment) => (
               <Appointment key={appointment.id}>
                 <span>
@@ -215,7 +232,7 @@ const Dashboard: React.FC = () => {
             }}
             onMonthChange={handleMonthChange}
             selectedDays={selectedDate}
-            onDayClick={handleOnDateChange}
+            onDayClick={handleDateChange}
           />
         </Calendar>
       </Content>
