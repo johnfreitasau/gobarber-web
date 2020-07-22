@@ -160,7 +160,7 @@ const Dashboard: React.FC = () => {
 
           {isToday(selectedDate) && nextAppointment && (
             <NextAppointment>
-              <strong>Following appointments:</strong>
+              <strong>Next Appointment:</strong>
               <div>
                 <img src={nextAppointment.user.avatar_url} alt="John Freitas" />
 
