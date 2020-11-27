@@ -38,8 +38,6 @@
 </br>
 
 
-## 💇🏻‍♂️ About the project
-
 To see the **api**, click here: [GoBarber Rest API](https://github.com/johnfreitasau/gobarber-api)</br>
 To see the **mobile client**, click here: [GoBarber Mobile](https://github.com/johnfreitasau/gobarber-mobile)
 
